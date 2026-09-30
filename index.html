@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LAST COURIER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Old+Mincho:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="game" tabindex="0"></canvas>
+
+<div id="hud" class="dim">
+  <div id="status">
+    <div class="unit"><b>R-07</b><span>自律運搬ユニット</span></div>
+    <div class="meter" id="batMeter"><i style="width:100%"></i><em>BATTERY</em><span>100%</span></div>
+    <div class="readout"><span>積載重量</span><span><b id="loadVal">0</b> / <span id="capVal">60</span> kg</span></div>
+    <div class="readout"><span>機体コンディション</span><span><b id="condVal">100</b> %</span></div>
+    <div id="tools"></div>
+  </div>
+  <div id="compassWrap"><canvas id="compass" width="1120" height="92"></canvas></div>
+  <div id="zone"></div>
+  <div id="net">
+    <div class="lbl">NETWORK</div>
+    <div class="val num" id="netVal">1 / 7</div>
+    <div class="dots" id="netDots"></div>
+    <div class="trust">信頼度 <b id="trustVal">0</b> ・ ACK <b id="ackVal">0</b></div>
+    <div class="archb" id="archBadge"></div>
+  </div>
+  <div id="cargoPanel"><div class="head"><span>CARGO</span><span id="cargoCount">0</span></div><div id="cargoList" style="display:grid;gap:6px"></div></div>
+  <div id="radio"></div>
+  <div id="balanceWrap"><canvas id="balance" width="680" height="240"></canvas></div>
+  <div id="prompt"></div>
+  <div id="hint"></div>
+  <div id="qte" class="hidden"><div class="t">INTRUSION DETECTED</div><div class="big">強制接続を検知 ― <kbd data-g="mash">Space</kbd> 連打で切断</div><div class="bar"><i id="qteFill" style="width:0"></i></div><div class="time" id="qteTime"></div></div>
+  <div id="toasts"></div>
+  <div id="crosshint">クリックで操作を開始</div>
+</div>
+
+<div id="glitch"></div>
+<div id="banner"><div class="l1" id="bannerL1"></div><div class="rule"></div><div class="l2" id="bannerL2"></div></div>
+
+<div id="terminal" class="overlay hidden"><div class="panel" role="dialog" aria-label="ターミナル">
+  <div class="phead"><div><div class="en" id="tEn"></div><h2 id="tName"></h2></div><div class="state" id="tState"></div></div>
+  <div class="tabs" id="tTabs"></div>
+  <div class="pbody" id="tBody"></div>
+  <div class="pfoot"><span class="note" id="tNote"></span><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn sig" data-act="room" id="tRoom">セーフルームへ降りる</button><button class="btn" data-act="close">出発する <kbd data-g="back">Esc</kbd></button></div></div>
+</div></div>
+
+<div id="result" class="overlay hidden"><div class="panel" role="dialog" aria-label="配送結果">
+  <div class="phead"><div><div class="en">DELIVERY REPORT</div><h2 id="rTitle"></h2></div></div>
+  <div class="pbody" id="rBody"></div>
+  <div class="pfoot"><span class="note" id="rNote"></span><button class="btn primary" data-act="rclose">確認</button></div>
+</div></div>
+
+<div id="mapView" class="hidden">
+  <canvas id="mapCanvas" width="1024" height="1024"></canvas>
+  <div class="legend">
+    <span><i style="background:#86e1f2"></i>接続済みノード</span>
+    <span><i style="background:#ff6b5e"></i>未接続</span>
+    <span><i style="background:#f2a04b"></i>配送先</span>
+    <span><i style="background:rgba(245,208,106,.5)"></i>腐食雨</span>
+    <span><i style="background:rgba(185,156,255,.6)"></i>エコー域</span>
+    <span id="mapCtl">クリック：目印を置く ／ 右クリック：消す ／ <kbd>M</kbd> 閉じる</span>
+  </div>
+</div>
+
+<div id="pause" class="overlay hidden"><div class="panel" role="dialog" aria-label="一時停止">
+  <div class="phead"><div><div class="en">PAUSED</div><h2>一時停止</h2></div></div>
+  <div class="pbody">
+    <div class="setrow"><label for="volRange">音量</label><input id="volRange" type="range" min="0" max="100" value="70"><span class="num" id="volVal">70</span></div>
+    <div class="setrow"><label for="sensRange">カメラ感度</label><input id="sensRange" type="range" min="20" max="300" value="100"><span class="num" id="sensVal">100</span></div>
+    <div class="setrow"><span>画質</span><div class="seg" id="qualSeg"><button data-q="high">高</button><button data-q="low">低</button></div><span></span></div>
+    <div class="rescue">
+      <div class="rm-sub" style="margin:0">救済</div>
+      <div class="rescue-row"><p><b>拠点へ帰還</b><span id="rsReturn">最後に立ち寄った拠点まで運んでもらう。進行も背中の荷物もそのまま。</span></p><button class="btn" data-act="rescue-return" id="rsReturnBtn">帰還する</button></div>
+      <div class="rescue-row"><p><b>拠点からやり直す</b><span id="rsRestart">最後に拠点を出た時点のセーブを読み込む。それ以降の進行は失われる。</span></p><button class="btn" data-act="rescue-restart" id="rsRestartBtn">やり直す</button></div>
+    </div>
+    <div id="pauseCtl" class="ctltable" style="margin-top:8px"></div>
+  </div>
+  <div class="pfoot"><div class="row" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" data-act="archive">アーカイブ</button><button class="btn" data-act="totitle">タイトルへ</button><button class="btn" data-act="wipe" id="wipeBtn">セーブを消去</button></div><button class="btn primary" data-act="resume">再開する</button></div>
+</div></div>
+
+<div id="room" class="hidden"><div class="room-panel" role="dialog" aria-label="セーフルーム">
+  <div><div class="en">SAFE ROOM ・ <span id="rmNode"></span></div><h2>セーフルーム</h2></div>
+  <div id="rmStatus"></div>
+  <div id="rmTabs"></div>
+  <div id="rmBody"></div>
+  <div id="rmFoot"></div>
+</div></div>
+
+<div id="archive" class="overlay hidden"><div class="panel" role="dialog" aria-label="アーカイブ">
+  <div class="phead"><div><div class="en">ARCHIVE</div><h2>アーカイブ</h2></div><div class="state on num" id="aCount"></div></div>
+  <div class="tabs" id="aTabs"></div>
+  <div class="arch-body"><div class="arch-list" id="aList"></div><article class="arch-read" id="aRead"></article></div>
+  <div class="pfoot"><span class="note" id="aNote"></span><button class="btn" data-act="aclose">閉じる <kbd data-g="archive">J</kbd></button></div>
+</div></div>
+
+<div id="intro" class="hidden"><div id="introText"></div><div class="skip">クリックでスキップ</div></div>
+
+<div id="ending" class="hidden"><div>
+  <div class="disp" style="color:var(--signal);letter-spacing:.4em;font-size:12px">ALL NODES ONLINE</div>
+  <h2>RECONNECTED</h2>
+  <p id="endText"></p>
+  <div class="stats" id="endStats" style="max-width:640px;margin:0 auto 22px;text-align:left"></div>
+  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button class="btn sig" data-act="endarchive">受信ログを読む</button><button class="btn primary" data-act="endclose">配送を続ける</button></div>
+</div></div>
+
+<div id="title">
+  <div class="kicker">AUTONOMOUS DELIVERY UNIT R-07</div>
+  <h1>LAST<br><span>COURIER</span></h1>
+  <p class="sub">人がいなくなった大地で、沈黙したノードへ荷物を運ぶ。一つ届けるたびに、ネットワークがひとつ繋がる。</p>
+  <div class="row">
+    <button class="btn primary" id="btnNew" disabled>はじめから</button>
+    <button class="btn" id="btnCont" disabled>つづきから</button>
+    <span id="loading">GENERATING TERRAIN…</span>
+  </div>
+  <div class="ctl" id="titleCtl"></div>
+  <div class="mobile hidden" id="mobileNote">このゲームはキーボードとマウスで遊ぶ作りです。PC のブラウザで開いてください。</div>
+</div>
+<div id="fade"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+// The game scripts below are classic scripts sharing one global scope; expose Three.js to them.
+// Module and defer scripts run in document order, so this finishes before they start.
+Object.assign(globalThis, { THREE, EffectComposer, RenderPass, UnrealBloomPass, ShaderPass, OutputPass, mergeGeometries });
+</script>
+<script defer src="js/core/utils.js"></script>
+<script defer src="js/data/world.js"></script>
+<script defer src="js/data/lore.js"></script>
+<script defer src="js/input/glyphs.js"></script>
+<script defer src="js/world/terrain.js"></script>
+<script defer src="js/render/renderer.js"></script>
+<script defer src="js/render/terrain-water.js"></script>
+<script defer src="js/render/nature.js"></script>
+<script defer src="js/render/post.js"></script>
+<script defer src="js/entities/robot.js"></script>
+<script defer src="js/entities/props.js"></script>
+<script defer src="js/game/state.js"></script>
+<script defer src="js/game/player.js"></script>
+<script defer src="js/game/cargo.js"></script>
+<script defer src="js/game/orders.js"></script>
+<script defer src="js/ui/terminal.js"></script>
+<script defer src="js/game/network.js"></script>
+<script defer src="js/game/tools.js"></script>
+<script defer src="js/game/hazards.js"></script>
+<script defer src="js/ui/hud.js"></script>
+<script defer src="js/ui/map.js"></script>
+<script defer src="js/audio/audio.js"></script>
+<script defer src="js/game/save.js"></script>
+<script defer src="js/ui/archive.js"></script>
+<script defer src="js/input/gamepad.js"></script>
+<script defer src="js/game/collection.js"></script>
+<script defer src="js/room/saferoom.js"></script>
+<script defer src="js/game/rescue.js"></script>
+<script defer src="js/main/camera.js"></script>
+<script defer src="js/input/input.js"></script>
+<script defer src="js/main/flow.js"></script>
+<script defer src="js/main/loop.js"></script>
+</body>
+</html>
