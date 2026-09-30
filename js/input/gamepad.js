@@ -17,6 +17,15 @@ function setInputMode(m) {
   if (G.mode === 'archive') renderArchive(false);
   if (G.mode === 'map') updateMapLegend();
 }
+function refreshPadLabels() {
+  renderControlLists();
+  applyStaticGlyphs();
+  if (G.mode === 'terminal') renderTerminal();
+  if (G.mode === 'archive') renderArchive(false);
+  if (G.mode === 'map') updateMapLegend();
+  if (G.mode === 'room') renderRoomUI();
+  syncPauseUI();
+}
 function applyStaticGlyphs() {
   document.querySelectorAll('[data-g]').forEach((el) => { el.textContent = glyph(el.dataset.g); el.classList.toggle('pad', inputMode === 'pad'); });
 }
@@ -37,6 +46,11 @@ function pollPad(dt) {
   const list = navigator.getGamepads ? navigator.getGamepads() : [];
   let gp = null;
   for (const g of list) { if (g && g.connected) { gp = g; break; } }
+  if (gp && gp !== pad.gp && gp.id !== pad.lastId) {
+    pad.lastId = gp.id;
+    const st = detectPadStyle(gp.id);
+    if (st !== PAD_STYLE.detected) { PAD_STYLE.detected = st; refreshPadLabels(); }
+  }
   pad.gp = gp;
   if (!gp) { pad.lx = pad.ly = pad.rx = pad.ry = pad.lt = pad.rt = 0; pad.prev = []; return; }
   const now = gp.buttons.map((b) => !!b && (b.pressed || b.value > 0.5));

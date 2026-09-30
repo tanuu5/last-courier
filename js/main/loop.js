@@ -47,7 +47,8 @@ function tick(dt) {
     const outdoors = !NODES.some((n) => Math.hypot(player.pos.x - n.x, player.pos.z - n.z) < 45);
     P_walkTime = player.speed > 0.6 && outdoors ? P_walkTime + dt : Math.max(0, P_walkTime - dt * 0.5);
     G.autosave -= dt; if (G.autosave <= 0) { G.autosave = 60; saveGame(); }
-  } else if (playing && G.cine) {
+  } else {
+    // world is paused (menus, map, archive) or a cinematic is running: stop the gait so the robot doesn't walk on the spot
     player.speed = 0; player.vel.set(0, 0, 0);
   }
   if (G.mode === 'room') updateRoom(dt);
@@ -78,6 +79,7 @@ async function init() {
   renderControlLists();
   if (matchMedia('(pointer: coarse)').matches && !matchMedia('(pointer: fine)').matches) $('mobileNote').classList.remove('hidden');
   try { const q = localStorage.getItem('last-courier-quality'); if (q === 'low' || q === 'high') { QUALITY.level = q; QUALITY.userSet = true; } } catch (e) { /* ignore */ }
+  try { const ps = localStorage.getItem('last-courier-padstyle'); if (ps === 'auto' || ps === 'A' || ps === 'B') PAD_STYLE.setting = ps; } catch (e) { /* ignore */ }
   initRenderer();
   initMaterials();
   await nextFrame();

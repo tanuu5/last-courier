@@ -61,7 +61,7 @@ function renderArchive(focusSel) {
   $('aList').innerHTML = html;
   $('aRead').innerHTML = archiveReader(sel);
   $('aRead').scrollTop = 0;
-  $('aNote').innerHTML = fmtKeys(inputMode === 'pad' ? '{back} 閉じる ・ LB / RB 分類 ・ 右スティック スクロール' : '{archive} / Esc で閉じる');
+  $('aNote').innerHTML = fmtKeys(inputMode === 'pad' ? `{back} 閉じる ・ ${padLabel('LB / RB')} 分類 ・ 右スティック スクロール` : '{archive} / Esc で閉じる');
   if (focusSel && inputMode === 'pad') { const b = $('aList').querySelector(`[data-aid="${archSel}"]`) || $('aList').querySelector('[data-aid]'); if (b) b.focus(); }
 }
 function selectArchive(id) {

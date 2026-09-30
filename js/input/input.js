@@ -91,13 +91,21 @@ function setupInput() {
   $('result').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && b.dataset.act === 'rclose') closeResult(); });
   $('ending').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.act === 'endclose') closeEnding(); else if (b.dataset.act === 'endarchive') openArchive('final'); });
   setupArchiveUI();
-  addEventListener('gamepadconnected', () => { toast('INPUT', 'ゲームパッドを検出しました'); });
+  addEventListener('gamepadconnected', (e) => {
+    const st = PAD_STYLE.setting === 'auto' ? detectPadStyle(e.gamepad && e.gamepad.id) : PAD_STYLE.setting;
+    toast('INPUT', `ゲームパッドを検出しました（ボタン表示：タイプ${st}。一時停止メニューで切り替えられます）`);
+  });
   $('mapCanvas').addEventListener('click', (e) => mapClick(e, false));
   $('mapCanvas').addEventListener('contextmenu', (e) => mapClick(e, true));
   $('mapView').addEventListener('click', (e) => { if (e.target.id === 'mapView') closeMap(); });
   // pause
   $('pause').addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.pad) {
+      PAD_STYLE.setting = b.dataset.pad;
+      try { localStorage.setItem('last-courier-padstyle', PAD_STYLE.setting); } catch (er) { /* ignore */ }
+      refreshPadLabels(); audio.ui(700); return;
+    }
     if (b.dataset.q) { QUALITY.level = b.dataset.q; QUALITY.userSet = true; applyQuality(); syncPauseUI(); try { localStorage.setItem('last-courier-quality', QUALITY.level); } catch (er) { /* ignore */ } return; }
     const act = b.dataset.act;
     if (act === 'resume') resumeGame();
@@ -136,9 +144,9 @@ const CONTROLS = [
 ];
 function renderControlLists() {
   const pd = inputMode === 'pad';
-  $('titleCtl').innerHTML = CONTROLS.slice(0, 13).map(([l, k, p]) => `<span><kbd${pd ? ' class="pad"' : ''}>${pd ? p : k}</kbd> ${l}</span>`).join('');
+  $('titleCtl').innerHTML = CONTROLS.slice(0, 13).map(([l, k, p]) => `<span><kbd${pd ? ' class="pad"' : ''}>${pd ? padLabel(p) : k}</kbd> ${l}</span>`).join('');
   $('pauseCtl').innerHTML = `<div class="ctlhead"><span>操作</span><span>キーボード・マウス</span><span>ゲームパッド</span></div>` +
-    CONTROLS.map(([l, k, p]) => `<div><span>${l}</span><span><kbd>${k}</kbd></span><span><kbd class="pad">${p}</kbd></span></div>`).join('');
+    CONTROLS.map(([l, k, p]) => `<div><span>${l}</span><span><kbd>${k}</kbd></span><span><kbd class="pad">${padLabel(p)}</kbd></span></div>`).join('');
 }
 function openPause() {
   if (G.mode !== 'play') return;
@@ -154,6 +162,9 @@ function openPause() {
 }
 function syncPauseUI() {
   document.querySelectorAll('#qualSeg button').forEach((b) => b.classList.toggle('on', b.dataset.q === QUALITY.level));
+  document.querySelectorAll('#padSeg button').forEach((b) => b.classList.toggle('on', b.dataset.pad === PAD_STYLE.setting));
+  const auto = document.querySelector('#padSeg [data-pad="auto"]');
+  if (auto) auto.textContent = PAD_STYLE.setting === 'auto' ? `自動（いまはタイプ${PAD_STYLE.detected}）` : '自動';
 }
 function resumeGame() {
   $('pause').classList.add('hidden');
