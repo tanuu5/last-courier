@@ -147,13 +147,14 @@ class Robot {
     // crouch (sneak)
     this.crouch = damp(this.crouch, P.sneak ? 1 : 0, 6, dt);
     // ---- fall / get-up pose ----
-    if (st === 'fallen' || st === 'getup' || st === 'boot') {
+    if (st === 'fallen' || st === 'getup' || st === 'boot' || st === 'shutdown') {
       let k;
       if (st === 'fallen') k = smoothstep(0, 0.45, P.stateT);
       else if (st === 'getup') k = 1 - smoothstep(0, 1.1, P.stateT);
+      else if (st === 'shutdown') k = smoothstep(0.1, 1.4, P.stateT);
       else k = 1 - smoothstep(0.6, 2.4, P.stateT);
       const fd = this.fallDir;
-      const kneel = st === 'boot';
+      const kneel = st === 'boot' || st === 'shutdown';
       if (kneel) {
         this.body.rotation.set(0, 0, 0);
         this.pelvis.position.y = lerp(0.92, 0.52, k);
@@ -261,6 +262,7 @@ class Robot {
     this.visorColor.lerp(new THREE.Color(target), 1 - Math.exp(-6 * dt));
     MAT.visor.emissive.copy(this.visorColor);
     let inten = 3.2;
+    if (P.state === 'shutdown') inten = 3.2 * (1 - smoothstep(0.4, 2.2, P.stateT)) * (0.75 + 0.25 * Math.sin(P.stateT * 25));
     if (P.state === 'boot') inten = 3.2 * smoothstep(0.3, 1.5, P.stateT) * (0.7 + 0.3 * Math.sin(P.stateT * 30));
     if (P.state === 'hijack') inten = 2 + Math.random() * 3;
     MAT.visor.emissiveIntensity = inten;

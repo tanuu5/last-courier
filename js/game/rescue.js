@@ -11,7 +11,8 @@ function saveCheckpoint() {
 }
 function hasCheckpoint() { try { return !!localStorage.getItem(CHECK_KEY); } catch (e) { return false; } }
 function rescueNode() { const n = NODES[player.lastNode]; return n && n.connected ? n : NODES[0]; }
-function returnToNode() {
+// opts.recover: called after the robot shut down (battery or damage) — costs a little cargo condition
+function returnToNode(opts = {}) {
   const n = rescueNode();
   $('pause').classList.add('hidden');
   G.mode = 'fade';
@@ -27,9 +28,29 @@ function returnToNode() {
     G.echoGrace = G.time + 10;
     G.mode = 'play';
     requestLock();
-    setTimeout(() => radio('ツムギ', `回収ドローンで${n.name}まで運んだよ。背中の荷物はそのまま。落とした荷物は、その場に残ってる。`), 900);
+    let msg = `回収ドローンで${n.name}まで運んだよ。背中の荷物はそのまま。落とした荷物は、その場に残ってる。`;
+    if (opts.recover) {
+      P.battery = Math.max(P.battery, 35);
+      if (opts.reason === 'damage') { P.cond = Math.max(P.cond, 35); applyWear(); }
+      for (const c of P.cargo.slice()) damageCargo(c, 10, 'recover');
+      G.stats.recoveries = (G.stats.recoveries || 0) + 1;
+      G.flags.batWarn5 = false; G.flags.condWarn15 = false;
+      msg = `回収ドローンで${n.name}まで運んだよ。背中の荷物は、回収のときに少し傷んだ。落とした荷物は、その場に残ってる。`
+        + (opts.reason === 'damage' ? '機体はなんとか動く状態。セーフルームで整備していって。' : '');
+    }
+    setTimeout(() => radio('ツムギ', msg), 900);
     saveGame();
   }, 700);
+}
+// Battery empty or damage at the limit: the robot kneels and powers down, then a recovery drone takes it home.
+function startShutdown(reason) {
+  const P = player;
+  if (P.state === 'shutdown') return;
+  cancelPlacing();
+  setState('shutdown'); P.shutdownReason = reason; P.recovering = false;
+  P.vel.set(0, 0, 0); P.speed = 0; P.tilt.x = P.tilt.z = 0; P.tiltV.x = P.tiltV.z = 0;
+  audio.shutdown(); rumble(0.6, 0.3, 900);
+  radio('ツムギ', reason === 'battery' ? 'R-07、バッテリーが切れた……！ 回収ドローンを向かわせるね。' : '機体の損傷が限界を超えた。緊急停止させるね。回収ドローンを向かわせる。');
 }
 function restartFromCheckpoint() {
   try {

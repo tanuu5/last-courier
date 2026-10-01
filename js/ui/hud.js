@@ -89,6 +89,7 @@ function updateHUD(dt) {
   if (r > 0.1) z += `<span class="z rain"><b>RAIN</b>腐食雨 ・ 荷物が劣化中</span>`;
   if (ef > 0.3) z += `<span class="z echo"><b>ECHO</b>エコー域</span>`;
   if (P.battery < 15) z += `<span class="z bat"><b>LOW</b>バッテリー残量わずか</span>`;
+  if (P.cond < 25) z += `<span class="z bat"><b>DAMAGE</b>機体の損傷が大きい</span>`;
   if ($('zone').innerHTML !== z) $('zone').innerHTML = z;
 }
 

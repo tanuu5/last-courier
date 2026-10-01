@@ -100,6 +100,10 @@ function contextTutorials(dt) {
   }
   if (!G.flags.shardNear && G.mode === 'play') { const sh = nearestShard(16); if (sh) { G.flags.shardNear = true; radio('ツムギ', 'この近くに古いデータ片の信号がある。光る石柱を探して、{interact} で読み取って。'); } }
   if (G.stats.distance > 10000 && !G.items.footpad) unlockItem('footpad');
+  if (P.battery < 5 && P.state === 'move' && !G.flags.batWarn5) { G.flags.batWarn5 = true; radio('ツムギ', 'バッテリー残り5%！ 止まってしまう前に、接続済みの拠点か充電ポストへ。'); }
+  if (P.battery > 30) G.flags.batWarn5 = false;
+  if (P.cond < 15 && P.state === 'move' && !G.flags.condWarn15) { G.flags.condWarn15 = true; radio('ツムギ', '機体の損傷が限界に近い。これ以上傷むと緊急停止する。セーフルームで整備して。'); }
+  if (P.cond > 40) G.flags.condWarn15 = false;
   if (!G.flags.lowBat && P.battery < 25) { G.flags.lowBat = true; radio('ツムギ', 'バッテリーが減ってきた。接続済みのノードか充電ポストの近くで回復できる。'); }
   if (!G.flags.heavy && cargoWeight() > capacity() * 0.75) { G.flags.heavy = true; radio('ツムギ', 'かなり重い。荷物が高く積まれるほど、揺れは大きくなる。坂の途中で立ち止まるのも手だよ。'); }
 }

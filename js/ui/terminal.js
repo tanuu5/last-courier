@@ -73,6 +73,7 @@ function renderTerminal() {
       <div class="stat"><small>完了した配送</small><b>${s.delivered}</b></div>
       <div class="stat"><small>歩いた距離</small><b>${(s.distance / 1000).toFixed(2)} km</b></div>
       <div class="stat"><small>転倒</small><b>${s.falls}</b></div>
+      <div class="stat"><small>回収された回数</small><b>${s.recoveries || 0}</b></div>
       <div class="stat"><small>受け取ったACK</small><b>${s.acksRecv}</b></div>
       <div class="stat"><small>送ったACK</small><b>${s.acksSent}</b></div>
       <div class="stat"><small>評価 S / A / B / C</small><b>${s.grades.S}/${s.grades.A}/${s.grades.B}/${s.grades.C}</b></div>

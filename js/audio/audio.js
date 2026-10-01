@@ -74,6 +74,14 @@ const audio = {
     for (let i = 0; i < 14; i++) setTimeout(() => { this.noiseHit(2600 + Math.random() * 2000, 3, 0.05, 0.05); if (i % 3 === 0) this.blip(520 + Math.random() * 300, 0.18, 'sawtooth', 0.012); }, i * 190 + Math.random() * 80);
     setTimeout(() => this.blip(880, 0.4, 'sine', 0.05, this.revIn), 2900);
   },
+  shutdown() {
+    if (!this.ctx) return; const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain(), f = this.ctx.createBiquadFilter();
+    o.type = 'sawtooth'; o.frequency.setValueAtTime(520, t); o.frequency.exponentialRampToValueAtTime(40, t + 1.8);
+    f.type = 'lowpass'; f.frequency.value = 900; o.connect(f); f.connect(g); g.connect(this.master);
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.06, t + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t + 2.0);
+    o.start(t); o.stop(t + 2.1); this.thump(50, 0.3, 0.4);
+  },
   archive() { [659, 988].forEach((f, i) => setTimeout(() => this.blip(f, 0.9, 'sine', 0.045, this.revIn), i * 140)); },
   scan() {
     if (!this.ctx) return; const t = this.ctx.currentTime;

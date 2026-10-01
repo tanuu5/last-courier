@@ -29,6 +29,11 @@ function updatePlayer(dt) {
   if (P.state === 'getup') { if (P.stateT > 1.15) setState('move'); return; }
   if (P.state === 'boot') { if (P.stateT > 2.6) setState('move'); return; }
   if (P.state === 'hijack') { updateHijack(dt); return; }
+  if (P.state === 'shutdown') {
+    P.vel.set(0, 0, 0); P.speed = 0;
+    if (P.stateT > 3.4 && !P.recovering) { P.recovering = true; returnToNode({ recover: true, reason: P.shutdownReason }); }
+    return;
+  }
   const active = G.mode === 'play' && !G.cine;
   const K = input.keys;
   let ix = 0, iz = 0;
@@ -130,6 +135,8 @@ function updatePlayer(dt) {
   // charging
   for (const n of NODES) if (n.connected && Math.hypot(P.pos.x - n.x, P.pos.z - n.z) < 7.5) P.battery = Math.min(100, P.battery + 9 * dt);
   for (const s of G.structures) if (s.type === 'charger' && s.visible && Math.hypot(P.pos.x - s.pos.x, P.pos.z - s.pos.z) < 12) P.battery = Math.min(100, P.battery + 3.2 * dt);
+  if (P.state === 'move' && P.battery <= 0) { startShutdown('battery'); return; }
+  if (P.state === 'move' && P.cond <= 0) { startShutdown('damage'); return; }
   G.stats.distance += hs * dt;
 }
 let _lastLadder = null;
