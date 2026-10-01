@@ -39,7 +39,7 @@ function genSideOrder(from, conn) {
   const W = items.reduce((s, i) => s + i.w, 0);
   return {
     id: 'S' + (G.nextId++), main: false, from: from.id, to: dest.id,
-    title: tpl[0].replace('{d}', dest.name), desc: tpl[1], items,
+    title: tpl[0].replace('{d}', dest.name), desc: tpl[1].replace('{d}', dest.name), items,
     locked: false, done: false, acceptedAt: 0, limit: urgent ? Math.round(dist * 1.3 / WALK * 1.15 + 50) : 0,
     reward: Math.round(40 + W * 1.2 + dist * 0.12 + (urgent ? 40 : 0)), losses: 0,
   };
@@ -53,6 +53,22 @@ function refreshOrders() {
       for (let k = count; k < 2; k++) G.orders.push(genSideOrder(n, conn));
     }
   }
+}
+// The current main goal: what to deliver (if carrying main cargo) or where to pick up the next main order.
+function mainObjectives() {
+  const carrying = new Set(player.cargo.map((c) => c.orderId));
+  const out = [];
+  for (const o of G.orders) {
+    if (!o.main || o.done || o.locked) continue;
+    if (carrying.has(o.id)) out.push({ kind: 'deliver', o, node: NODES[o.to] });
+    else if (o.items.some((i) => i.status === 'pending')) out.push({ kind: 'accept', o, node: NODES[o.from] });
+  }
+  return out;
+}
+function nextMainHint() {
+  const obj = mainObjectives().filter((m) => m.kind === 'accept');
+  if (!obj.length) return '';
+  return obj.map((m) => `${m.node.name}で「${m.o.title}」（${NODES[m.o.to].name}行き）`).join('、') + 'を受けられるよ。';
 }
 function acceptOrder(o) {
   const pend = o.items.map((it, idx) => ({ it, idx })).filter((x) => x.it.status === 'pending');

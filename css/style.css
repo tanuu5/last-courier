@@ -45,6 +45,9 @@ kbd{font-family:var(--font-display);font-size:.8em;border:1px solid var(--faint)
 #tools .tool{font-size:11px;border:1px solid var(--hair);padding:2px 7px;color:var(--mute);background:rgba(0,0,0,.2)}
 #tools .tool b{font-family:var(--font-display);color:var(--paper);margin-left:4px}
 #tools .tool.off{opacity:.35}
+#objective{display:grid;gap:4px}
+#objective div{font-size:12px;line-height:1.5;background:var(--glass);border-left:2px solid var(--cargo);padding:5px 8px}
+#objective b{font-family:var(--font-display);font-size:10.5px;letter-spacing:.16em;color:var(--cargo);margin-right:6px}
 
 #compassWrap{position:absolute;left:50%;top:14px;transform:translateX(-50%);width:min(560px,70vw)}
 #compass{width:100%;height:46px;display:block}

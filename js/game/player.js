@@ -139,6 +139,7 @@ function moveAndCollide(dt, passive) {
   // circle colliders
   for (let it = 0; it < 2; it++) {
     for (const c of collidersAt(nx, nz)) {
+      if (c.struct && !c.struct.visible) continue;
       const ddx = nx - c.x, ddz = nz - c.z, d = Math.hypot(ddx, ddz), min = c.r + 0.38;
       if (d < min && d > 1e-4) { nx = c.x + ddx / d * min; nz = c.z + ddz / d * min; }
     }

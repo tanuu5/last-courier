@@ -56,7 +56,7 @@ function renderTerminal() {
       const re = o.items.some((i) => i.status !== 'pending');
       return `<div class="order ${o.main ? 'main' : ''}"><div>
         <h3>${o.main ? '<span class="tag main">MAIN</span>' : ''}${o.limit ? '<span class="tag urgent">至急</span>' : ''}${re ? '<span class="tag lost">再発行</span>' : ''}${o.title}</h3>
-        <p>${o.desc}</p>
+        <p>${o.desc.replace('{d}', NODES[o.to].name)}</p>
         <div class="specs"><span>宛先<b>${NODES[o.to].name}</b></span><span>直線距離<b>${Math.round(nodeDist(o.from, o.to))} m</b></span><span>重量<b>${W} kg</b></span>${o.limit ? `<span>制限時間<b>${fmtTime(o.limit)}</b></span>` : ''}<span>報酬<b>${o.reward}</b></span></div>
         <div class="items">${pend.map((it) => `<span style="--c:${hex(CTYPES[it.type].band)}">${it.name} ${it.w}kg</span>${tagHtml(it)}`).join('')}</div>
       </div><button class="btn ${o.main ? 'primary' : ''}" data-act="accept" data-id="${o.id}" ${over ? 'disabled' : ''}>${over ? '積載超過' : '受注する'}</button></div>`;

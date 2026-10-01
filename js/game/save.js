@@ -28,9 +28,18 @@ function loadGame() {
   NODES.forEach((n, i) => { n.connected = !!d.nodes[i]; setNodeVisual(n); });
   G.orders = d.orders;
   // structures
-  for (const s of G.structures) scene.remove(s.mesh);
+  for (const s of G.structures) { scene.remove(s.mesh); s.visible = false; }
   G.structures = [];
-  d.structures.forEach((s) => addStructure(s));
+  d.structures.filter((s) => s.owner === 'you').forEach((s) => addStructure(s));
+  // other units' structures are rebuilt from the current world layout (keeps old saves in sync with fixes)
+  const savedOthers = d.structures.filter((s) => s.owner !== 'you');
+  planOtherStructures();
+  for (const s of G.structures) {
+    if (s.owner === 'you') continue;
+    s.visible = !!(NODES[s.revealNode] && NODES[s.revealNode].connected); s.mesh.visible = s.visible;
+    const prev = savedOthers.find((p) => !p.used && p.type === s.type && p.revealNode === s.revealNode && p.owner === s.owner);
+    if (prev) { prev.used = true; s.acked = !!prev.acked; s.acks = Math.max(s.acks, prev.acks || 0); }
+  }
   // cargo
   for (const c of G.cargo) if (c.mesh.parent) c.mesh.parent.remove(c.mesh);
   G.cargo = []; player.cargo = [];

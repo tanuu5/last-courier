@@ -78,6 +78,7 @@ function drawMap() {
   for (const c of G.cargo) if (c.loc === 'ground' || c.loc === 'water') { const [cx, cz] = worldToMap(c.pos.x, c.pos.z, S); x.fillStyle = '#f2a04b'; x.fillRect(cx - 3, cz - 3, 6, 6); }
   // nodes
   const dests = new Set(player.cargo.map((c) => c.dest));
+  const mainOrigins = new Set(mainObjectives().filter((m) => m.kind === 'accept').map((m) => m.node.id));
   for (const n of NODES) {
     const [nx, nz] = worldToMap(n.x, n.z, S);
     const col = n.connected ? '#86e1f2' : '#ff6b5e';
@@ -86,6 +87,7 @@ function drawMap() {
     x.font = '600 17px "Zen Kaku Gothic New", sans-serif'; x.fillStyle = '#e6ecef'; x.textAlign = 'center';
     x.fillText(n.name, nx, nz - 16);
     x.font = '500 12px "Chakra Petch", sans-serif'; x.fillStyle = col; x.fillText(n.connected ? 'ONLINE' : 'OFFLINE', nx, nz + 24);
+    if (mainOrigins.has(n.id)) { x.font = '700 13px "Zen Kaku Gothic New", sans-serif'; x.fillStyle = '#f2a04b'; x.fillText('メイン依頼あり', nx, nz + 40); }
   }
   // data shards that have been found
   for (const sh of shardObjs) {

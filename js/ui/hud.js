@@ -58,6 +58,11 @@ function updateHUD(dt) {
   tools.push(`<span class="tool">${K('sign')} 標識</span>`);
   const th = tools.join('');
   if ($('tools').innerHTML !== th) $('tools').innerHTML = th;
+  const objs = mainObjectives();
+  const oh = objs.slice(0, 2).map((m) => m.kind === 'deliver'
+    ? `<div><b>MAIN</b>届ける：${m.o.title} → ${m.node.name}</div>`
+    : `<div><b>MAIN</b>受注：${m.o.title}（${m.node.name}で受け取り）</div>`).join('');
+  if ($('objective').innerHTML !== oh) $('objective').innerHTML = oh;
   const cn = NODES.filter((n) => n.connected).length;
   $('netVal').textContent = `${cn} / ${NODES.length}`;
   const dots = NODES.map((n) => `<i class="${n.connected ? 'on' : ''}"></i>`).join('');
@@ -124,8 +129,14 @@ function drawCompass() {
   const dests = [...new Set(player.cargo.map((c) => c.dest))];
   dests.forEach((d) => { const n = NODES[d]; mark(bearingTo(n.x, n.z), '#f2a04b', `${Math.round(Math.hypot(n.x - player.pos.x, n.z - player.pos.z))}m`, 'diamond'); });
   if (!dests.length) {
-    // nearest connected node as a faint guide
-    NODES.forEach((n) => { if (n.connected) { const d = Math.hypot(n.x - player.pos.x, n.z - player.pos.z); if (d > 25) mark(bearingTo(n.x, n.z), 'rgba(134,225,242,.55)', d < 400 ? `${Math.round(d)}m` : ''); } });
+    // where the next main orders can be picked up (white), other connected nodes faintly
+    const origins = new Set(mainObjectives().filter((m) => m.kind === 'accept').map((m) => m.node.id));
+    NODES.forEach((n) => {
+      const d = Math.hypot(n.x - player.pos.x, n.z - player.pos.z);
+      if (d < 25) return;
+      if (origins.has(n.id)) mark(bearingTo(n.x, n.z), '#e6ecef', `MAIN ${Math.round(d)}m`, 'diamond');
+      else if (n.connected) mark(bearingTo(n.x, n.z), 'rgba(134,225,242,.55)', d < 400 ? `${Math.round(d)}m` : '');
+    });
   }
   if (G.waypoint) mark(bearingTo(G.waypoint.x, G.waypoint.z), '#86e1f2', `${Math.round(Math.hypot(G.waypoint.x - player.pos.x, G.waypoint.z - player.pos.z))}m`);
   // center tick
