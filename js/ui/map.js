@@ -78,7 +78,7 @@ function drawMap() {
   for (const c of G.cargo) if (c.loc === 'ground' || c.loc === 'water') { const [cx, cz] = worldToMap(c.pos.x, c.pos.z, S); x.fillStyle = '#f2a04b'; x.fillRect(cx - 3, cz - 3, 6, 6); }
   // nodes
   const dests = new Set(player.cargo.map((c) => c.dest));
-  const mainOrigins = new Set(mainObjectives().filter((m) => m.kind === 'accept').map((m) => m.node.id));
+  const mainOrigins = new Set(SETTINGS.guide ? mainObjectives().filter((m) => m.kind === 'accept').map((m) => m.node.id) : []);
   for (const n of NODES) {
     const [nx, nz] = worldToMap(n.x, n.z, S);
     const col = n.connected ? '#86e1f2' : '#ff6b5e';

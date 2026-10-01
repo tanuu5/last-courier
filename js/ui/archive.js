@@ -5,7 +5,7 @@
    Archive
    ========================================================= */
 let archCat = 'log', archSel = null, archPrev = 'play';
-const ARCH_CATS = [['log', '記録'], ['term', '用語'], ['unit', 'ユニット']];
+const ARCH_CATS = [['log', '記録'], ['term', '用語'], ['unit', 'ユニット'], ['orders', '配送記録']];
 function isUnlocked(id) { return !!G.archive.unlocked[id]; }
 function unlockArchive(id, silent) {
   const e = ARCH_BY_ID[id];
@@ -16,6 +16,7 @@ function unlockArchive(id, silent) {
 }
 function unreadCount(cat) { return ARCHIVE.filter((e) => (!cat || e.cat === cat) && isUnlocked(e.id) && !G.archive.read[e.id]).length; }
 function firstInCat(cat) {
+  if (cat === 'orders') { const o = defaultOrderRecord(); return o ? { id: 'o:' + o.id } : null; }
   return ARCHIVE.find((e) => e.cat === cat && isUnlocked(e.id) && !G.archive.read[e.id]) || ARCHIVE.find((e) => e.cat === cat && isUnlocked(e.id));
 }
 function openArchive(sel) {
@@ -48,9 +49,11 @@ function archiveReader(e) {
 function renderArchive(focusSel) {
   const got = ARCHIVE.filter((e) => isUnlocked(e.id)).length;
   $('aCount').textContent = `${got} / ${ARCHIVE.length}`;
+  $('aTabs').innerHTML = ARCH_CATS.map(([k, l]) => { const n = unreadCount(k); return `<button data-acat="${k}" class="${archCat === k ? 'on' : ''}">${l}${n ? `<span class="newdot">${n}</span>` : ''}</button>`; }).join('');
+  $('aNote').innerHTML = fmtKeys(inputMode === 'pad' ? `{back} 閉じる ・ ${padLabel('LB / RB')} 分類 ・ 右スティック スクロール` : '{archive} / Esc で閉じる');
+  if (archCat === 'orders') { renderOrderRecords(focusSel); return; }
   const sel = archSel && ARCH_BY_ID[archSel] && isUnlocked(archSel) && ARCH_BY_ID[archSel].cat === archCat ? ARCH_BY_ID[archSel] : null;
   if (sel) G.archive.read[sel.id] = true;
-  $('aTabs').innerHTML = ARCH_CATS.map(([k, l]) => { const n = unreadCount(k); return `<button data-acat="${k}" class="${archCat === k ? 'on' : ''}">${l}${n ? `<span class="newdot">${n}</span>` : ''}</button>`; }).join('');
   let html = '', grp = null;
   for (const e of ARCHIVE) {
     if (e.cat !== archCat) continue;
@@ -61,10 +64,10 @@ function renderArchive(focusSel) {
   $('aList').innerHTML = html;
   $('aRead').innerHTML = archiveReader(sel);
   $('aRead').scrollTop = 0;
-  $('aNote').innerHTML = fmtKeys(inputMode === 'pad' ? `{back} 閉じる ・ ${padLabel('LB / RB')} 分類 ・ 右スティック スクロール` : '{archive} / Esc で閉じる');
   if (focusSel && inputMode === 'pad') { const b = $('aList').querySelector(`[data-aid="${archSel}"]`) || $('aList').querySelector('[data-aid]'); if (b) b.focus(); }
 }
 function selectArchive(id) {
+  if (id && id.startsWith('o:')) { selectOrderRecord(id); return; }
   if (!isUnlocked(id) || archSel === id) return;
   archSel = id;
   G.archive.read[id] = true;
@@ -73,6 +76,67 @@ function selectArchive(id) {
   $('aRead').innerHTML = archiveReader(ARCH_BY_ID[id]);
   $('aRead').scrollTop = 0;
   ARCH_CATS.forEach(([k]) => { const t = $('aTabs').querySelector(`[data-acat="${k}"] .newdot`); const n = unreadCount(k); if (t) { if (n) t.textContent = n; else t.remove(); } });
+  audio.ui(760);
+}
+/* ---------- delivery records (orders taken, their status and grades) ---------- */
+function orderRecordStatus(o) {
+  if (o.done) return o.result ? `完了 ・ 評価 ${o.result.grade}` : '完了';
+  if (o.locked) return `未解放 ・ ${o.req.map((r) => `「${G.orders.find((x) => x.id === r).title}」`).join('と')}の完了後`;
+  const carrying = o.items.some((i) => i.status === 'carrying'), pending = o.items.some((i) => i.status === 'pending');
+  if (carrying) return `受注中${pending ? '（一部は再発行待ち）' : ''} → ${NODES[o.to].name}`;
+  return `受注可 ・ ${NODES[o.from].name}で受け取り`;
+}
+function defaultOrderRecord() {
+  return G.orders.find((o) => o.main && !o.done && !o.locked) || G.orders.find((o) => o.done) || G.orders[0];
+}
+function orderRecordItem(o, sel) {
+  const g = o.result ? `<span class="gr g${o.result.grade}">${o.result.grade}</span>` : '';
+  return `<button class="arch-item${sel === o ? ' on' : ''}${o.locked ? ' dim' : ''}" data-aid="o:${o.id}"><span class="t">${o.title}${g}</span><span class="s">${orderRecordStatus(o)}</span></button>`;
+}
+function orderRecordReader(o) {
+  if (!o) return '<div class="arch-empty">配送の記録はまだありません。</div>';
+  const ITEM_ST = { pending: '未受注', carrying: '運搬中', lost: '大破' };
+  let h = `<div class="meta">${o.main ? 'メイン依頼' : 'サブ依頼'} ・ ${NODES[o.from].name} → ${NODES[o.to].name}</div><h3>${o.title}</h3>`;
+  h += `<p class="order-desc">${o.desc.replace('{d}', NODES[o.to].name)}</p>`;
+  h += `<div class="rrow"><span>状態</span><b>${orderRecordStatus(o)}</b></div>`;
+  if (o.result) {
+    const r = o.result;
+    h += `<div class="grade"><div class="g ${r.grade}">${r.grade}</div><div style="flex:1;min-width:0">
+      <div class="rrow"><span>所要時間</span><b>${fmtTime(r.t)}${o.limit ? ` ／ 制限 ${fmtTime(o.limit)}` : ''}</b></div>
+      <div class="rrow"><span>荷物の状態</span><b>${r.avg} %</b></div>
+      <div class="rrow"><span>運んだ重量</span><b>${r.W} kg</b></div>
+      <div class="rrow"><span>信頼度 ／ ACK</span><b>+${r.trust} ／ +${r.acks}</b></div>
+      <div class="rrow"><span>完了したとき</span><b>プレイ時間 ${fmtTime(r.at)}</b></div></div></div>`;
+  } else if (o.done) h += '<p class="order-desc">この依頼は、評価を記録する機能が入る前に完了しました。</p>';
+  else {
+    if (o.limit) h += `<div class="rrow"><span>制限時間</span><b>${fmtTime(o.limit)}</b></div>`;
+    h += `<div class="rrow"><span>報酬</span><b>${o.reward}</b></div>`;
+  }
+  h += '<div class="rm-sub" style="margin-top:16px">荷物</div>' + o.items.map((it) => `<div class="rrow"><span>${it.name}（${it.w}kg）</span><b>${it.status === 'delivered' ? `届けた ・ ${Math.round(it.cond)}%` : ITEM_ST[it.status]}</b></div>`).join('');
+  return h;
+}
+function renderOrderRecords(focusSel) {
+  const sel = archSel && archSel.startsWith('o:') ? G.orders.find((o) => 'o:' + o.id === archSel) : null;
+  const done = G.orders.filter((o) => o.done);
+  const gr = { S: 0, A: 0, B: 0, C: 0 }; done.forEach((o) => { if (o.result) gr[o.result.grade]++; });
+  let html = `<div class="arch-grp">完了 ${done.length} 件 ・ S ${gr.S} ／ A ${gr.A} ／ B ${gr.B} ／ C ${gr.C}</div>`;
+  html += '<div class="arch-grp">メイン依頼</div>' + G.orders.filter((o) => o.main).map((o) => orderRecordItem(o, sel)).join('');
+  const active = G.orders.filter((o) => !o.main && !o.done && o.acceptedAt);
+  if (active.length) html += '<div class="arch-grp">受注中のサブ依頼</div>' + active.map((o) => orderRecordItem(o, sel)).join('');
+  const sideDone = G.orders.filter((o) => !o.main && o.done).sort((a, b) => ((b.result && b.result.at) || 0) - ((a.result && a.result.at) || 0));
+  html += '<div class="arch-grp">完了したサブ依頼</div>' + (sideDone.length ? sideDone.map((o) => orderRecordItem(o, sel)).join('') : '<div class="arch-item locked"><span class="s">まだありません</span></div>');
+  $('aList').innerHTML = html;
+  $('aRead').innerHTML = orderRecordReader(sel);
+  $('aRead').scrollTop = 0;
+  if (focusSel && inputMode === 'pad') { const b = $('aList').querySelector(`[data-aid="${archSel}"]`) || $('aList').querySelector('[data-aid]'); if (b) b.focus(); }
+}
+function selectOrderRecord(id) {
+  if (archSel === id) return;
+  const o = G.orders.find((x) => 'o:' + x.id === id); if (!o) return;
+  archSel = id;
+  $('aList').querySelectorAll('.arch-item').forEach((b) => b.classList.toggle('on', b.dataset.aid === id));
+  $('aRead').innerHTML = orderRecordReader(o);
+  $('aRead').scrollTop = 0;
   audio.ui(760);
 }
 function setupArchiveUI() {

@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Old+Mincho:wght@400;600&display=swap">
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=202610012315">
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
@@ -80,6 +80,8 @@
     <div class="setrow"><label for="volRange">音量</label><input id="volRange" type="range" min="0" max="100" value="70"><span class="num" id="volVal">70</span></div>
     <div class="setrow"><label for="sensRange">カメラ感度</label><input id="sensRange" type="range" min="20" max="300" value="100"><span class="num" id="sensVal">100</span></div>
     <div class="setrow"><span>画質</span><div class="seg" id="qualSeg"><button data-q="high">高</button><button data-q="low">低</button></div><span></span></div>
+    <div class="setrow"><span>道しるべ</span><div class="seg" id="guideSeg"><button data-guide="0">なし（自分で探す）</button><button data-guide="1">あり（サクサク進めたい人向け）</button></div><span></span></div>
+    <p class="rm-note" style="margin:-4px 0 0 142px">「あり」にすると、次のメイン依頼を受けられる拠点を、画面左上・コンパス・地図に表示し、ツムギも次の行き先を教えてくれます。</p>
     <div class="setrow"><span>ボタン表示</span><div class="seg" id="padSeg"><button data-pad="auto">自動</button><button data-pad="A">タイプA（A B X Y）</button><button data-pad="B">タイプB（× ○ □ △）</button></div><span></span></div>
     <div class="rescue">
       <div class="rm-sub" style="margin:0">救済</div>
@@ -143,37 +145,37 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 // Module and defer scripts run in document order, so this finishes before they start.
 Object.assign(globalThis, { THREE, EffectComposer, RenderPass, UnrealBloomPass, ShaderPass, OutputPass, mergeGeometries });
 </script>
-<script defer src="js/core/utils.js"></script>
-<script defer src="js/data/world.js"></script>
-<script defer src="js/data/lore.js"></script>
-<script defer src="js/input/glyphs.js"></script>
-<script defer src="js/world/terrain.js"></script>
-<script defer src="js/render/renderer.js"></script>
-<script defer src="js/render/terrain-water.js"></script>
-<script defer src="js/render/nature.js"></script>
-<script defer src="js/render/post.js"></script>
-<script defer src="js/entities/robot.js"></script>
-<script defer src="js/entities/props.js"></script>
-<script defer src="js/game/state.js"></script>
-<script defer src="js/game/player.js"></script>
-<script defer src="js/game/cargo.js"></script>
-<script defer src="js/game/orders.js"></script>
-<script defer src="js/ui/terminal.js"></script>
-<script defer src="js/game/network.js"></script>
-<script defer src="js/game/tools.js"></script>
-<script defer src="js/game/hazards.js"></script>
-<script defer src="js/ui/hud.js"></script>
-<script defer src="js/ui/map.js"></script>
-<script defer src="js/audio/audio.js"></script>
-<script defer src="js/game/save.js"></script>
-<script defer src="js/ui/archive.js"></script>
-<script defer src="js/input/gamepad.js"></script>
-<script defer src="js/game/collection.js"></script>
-<script defer src="js/room/saferoom.js"></script>
-<script defer src="js/game/rescue.js"></script>
-<script defer src="js/main/camera.js"></script>
-<script defer src="js/input/input.js"></script>
-<script defer src="js/main/flow.js"></script>
-<script defer src="js/main/loop.js"></script>
+<script defer src="js/core/utils.js?v=202610012315"></script>
+<script defer src="js/data/world.js?v=202610012315"></script>
+<script defer src="js/data/lore.js?v=202610012315"></script>
+<script defer src="js/input/glyphs.js?v=202610012315"></script>
+<script defer src="js/world/terrain.js?v=202610012315"></script>
+<script defer src="js/render/renderer.js?v=202610012315"></script>
+<script defer src="js/render/terrain-water.js?v=202610012315"></script>
+<script defer src="js/render/nature.js?v=202610012315"></script>
+<script defer src="js/render/post.js?v=202610012315"></script>
+<script defer src="js/entities/robot.js?v=202610012315"></script>
+<script defer src="js/entities/props.js?v=202610012315"></script>
+<script defer src="js/game/state.js?v=202610012315"></script>
+<script defer src="js/game/player.js?v=202610012315"></script>
+<script defer src="js/game/cargo.js?v=202610012315"></script>
+<script defer src="js/game/orders.js?v=202610012315"></script>
+<script defer src="js/ui/terminal.js?v=202610012315"></script>
+<script defer src="js/game/network.js?v=202610012315"></script>
+<script defer src="js/game/tools.js?v=202610012315"></script>
+<script defer src="js/game/hazards.js?v=202610012315"></script>
+<script defer src="js/ui/hud.js?v=202610012315"></script>
+<script defer src="js/ui/map.js?v=202610012315"></script>
+<script defer src="js/audio/audio.js?v=202610012315"></script>
+<script defer src="js/game/save.js?v=202610012315"></script>
+<script defer src="js/ui/archive.js?v=202610012315"></script>
+<script defer src="js/input/gamepad.js?v=202610012315"></script>
+<script defer src="js/game/collection.js?v=202610012315"></script>
+<script defer src="js/room/saferoom.js?v=202610012315"></script>
+<script defer src="js/game/rescue.js?v=202610012315"></script>
+<script defer src="js/main/camera.js?v=202610012315"></script>
+<script defer src="js/input/input.js?v=202610012315"></script>
+<script defer src="js/main/flow.js?v=202610012315"></script>
+<script defer src="js/main/loop.js?v=202610012315"></script>
 </body>
 </html>

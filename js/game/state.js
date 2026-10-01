@@ -22,7 +22,7 @@ const player = {
 let robot;
 const input = { keys: {}, mouse: [false, false, false], locked: false, fHeld: false };
 const camState = { yaw: 0, pitch: 0.32, dist: 6.2, tDist: 6.2, target: new THREE.Vector3(), cur: new THREE.Vector3() };
-const SETTINGS = { vol: 0.7, sens: 1.0 };
+const SETTINGS = { vol: 0.7, sens: 1.0, guide: false };
 const TOOL_MAX = { ladder: 4, charger: 2 };
 const BAL = { inst0: 0.8, instH: 1.1, instW: 1.4, k: 2.7, kIdle: 2.6, c: 2.3, side: 0.55, fwd: 0.45, noise: 1.25, accel: 0.075, grip: 9, gripBase: 1.3, wrong: 0.8 };
 

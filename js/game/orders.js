@@ -120,6 +120,7 @@ function deliverHere(node) {
     if (resolved) {
       o.done = true;
       const r = gradeOrder(o);
+      o.result = { grade: r.grade, t: Math.round(r.t), avg: Math.round(r.avg), W: r.W, trust: r.trust, acks: r.acks, at: Math.round(G.time) };
       G.trust += r.trust; G.stats.acksRecv += r.acks; G.stats.grades[r.grade]++; G.stats.delivered++;
       if (r.grade === 'S') setTimeout(() => unlockItem('badge'), 2500);
       reports.push({ o, r, full: true });

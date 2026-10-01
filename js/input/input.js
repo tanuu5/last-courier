@@ -101,6 +101,11 @@ function setupInput() {
   // pause
   $('pause').addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.guide) {
+      SETTINGS.guide = b.dataset.guide === '1';
+      try { localStorage.setItem('last-courier-guide', SETTINGS.guide ? '1' : '0'); } catch (er) { /* ignore */ }
+      syncPauseUI(); hudTimer = 0; audio.ui(700); return;
+    }
     if (b.dataset.pad) {
       PAD_STYLE.setting = b.dataset.pad;
       try { localStorage.setItem('last-courier-padstyle', PAD_STYLE.setting); } catch (er) { /* ignore */ }
@@ -162,6 +167,7 @@ function openPause() {
 }
 function syncPauseUI() {
   document.querySelectorAll('#qualSeg button').forEach((b) => b.classList.toggle('on', b.dataset.q === QUALITY.level));
+  document.querySelectorAll('#guideSeg button').forEach((b) => b.classList.toggle('on', (b.dataset.guide === '1') === SETTINGS.guide));
   document.querySelectorAll('#padSeg button').forEach((b) => b.classList.toggle('on', b.dataset.pad === PAD_STYLE.setting));
   const auto = document.querySelector('#padSeg [data-pad="auto"]');
   if (auto) auto.textContent = PAD_STYLE.setting === 'auto' ? `自動（いまはタイプ${PAD_STYLE.detected}）` : '自動';

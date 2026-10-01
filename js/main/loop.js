@@ -79,6 +79,7 @@ async function init() {
   renderControlLists();
   if (matchMedia('(pointer: coarse)').matches && !matchMedia('(pointer: fine)').matches) $('mobileNote').classList.remove('hidden');
   try { const q = localStorage.getItem('last-courier-quality'); if (q === 'low' || q === 'high') { QUALITY.level = q; QUALITY.userSet = true; } } catch (e) { /* ignore */ }
+  try { SETTINGS.guide = localStorage.getItem('last-courier-guide') === '1'; } catch (e) { /* ignore */ }
   try { const ps = localStorage.getItem('last-courier-padstyle'); if (ps === 'auto' || ps === 'A' || ps === 'B') PAD_STYLE.setting = ps; } catch (e) { /* ignore */ }
   initRenderer();
   initMaterials();

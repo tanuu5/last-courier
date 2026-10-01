@@ -58,7 +58,7 @@ function updateHUD(dt) {
   tools.push(`<span class="tool">${K('sign')} 標識</span>`);
   const th = tools.join('');
   if ($('tools').innerHTML !== th) $('tools').innerHTML = th;
-  const objs = mainObjectives();
+  const objs = SETTINGS.guide ? mainObjectives() : [];
   const oh = objs.slice(0, 2).map((m) => m.kind === 'deliver'
     ? `<div><b>MAIN</b>届ける：${m.o.title} → ${m.node.name}</div>`
     : `<div><b>MAIN</b>受注：${m.o.title}（${m.node.name}で受け取り）</div>`).join('');
@@ -130,7 +130,7 @@ function drawCompass() {
   dests.forEach((d) => { const n = NODES[d]; mark(bearingTo(n.x, n.z), '#f2a04b', `${Math.round(Math.hypot(n.x - player.pos.x, n.z - player.pos.z))}m`, 'diamond'); });
   if (!dests.length) {
     // where the next main orders can be picked up (white), other connected nodes faintly
-    const origins = new Set(mainObjectives().filter((m) => m.kind === 'accept').map((m) => m.node.id));
+    const origins = new Set(SETTINGS.guide ? mainObjectives().filter((m) => m.kind === 'accept').map((m) => m.node.id) : []);
     NODES.forEach((n) => {
       const d = Math.hypot(n.x - player.pos.x, n.z - player.pos.z);
       if (d < 25) return;

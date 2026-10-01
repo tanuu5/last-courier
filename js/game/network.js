@@ -27,7 +27,7 @@ function connectNode(n, cinematic) {
   const lines = NODE_LINES[n.id] || [];
   lines.forEach((l, i) => setTimeout(() => radio('ツムギ', l), 2600 + i * 5200));
   const hint = nextMainHint();
-  if (hint) setTimeout(() => radio('ツムギ', '次のメイン依頼は、' + hint), 2600 + lines.length * 5200);
+  if (hint && SETTINGS.guide) setTimeout(() => radio('ツムギ', '次のメイン依頼は、' + hint), 2600 + lines.length * 5200);
   if (u) setTimeout(() => toast('UNLOCK', u.text), 3200);
   rumble(0.3, 0.6, 800);
   (NODE_ARCH[n.id] || []).forEach((id, i) => setTimeout(() => unlockArchive(id), 5600 + i * 1400));

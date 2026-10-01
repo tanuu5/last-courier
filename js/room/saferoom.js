@@ -18,7 +18,7 @@ function itemModel(kind) {
   const g = new THREE.Group();
   const M = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.5, metalness: 0.2 }, o));
   const add = (geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; g.add(m); return m; };
-  if (kind === 'mug') { add(new THREE.CylinderGeometry(0.055, 0.05, 0.11, 18), M(0xe9e4da, { roughness: 0.3, metalness: 0 }), 0, 0.055); const h = add(new THREE.TorusGeometry(0.03, 0.009, 8, 14), M(0xe9e4da, { roughness: 0.3 }), 0.06, 0.06); h.rotation.y = Math.PI / 2; add(new THREE.CylinderGeometry(0.048, 0.048, 0.005, 18), M(0x3a2a1c), 0, 0.106); }
+  if (kind === 'mug') { add(new THREE.CylinderGeometry(0.055, 0.05, 0.11, 18), M(0xe9e4da, { roughness: 0.3, metalness: 0 }), 0, 0.055); const h = add(new THREE.TorusGeometry(0.03, 0.009, 8, 14, Math.PI), M(0xe9e4da, { roughness: 0.3 }), 0.052, 0.058); h.rotation.z = -Math.PI / 2; add(new THREE.CylinderGeometry(0.048, 0.048, 0.005, 18), M(0x3a2a1c), 0, 0.106); }
   else if (kind === 'vane') { add(new THREE.CylinderGeometry(0.035, 0.045, 0.02, 10), M(0x2a2e33), 0, 0.01); add(new THREE.CylinderGeometry(0.004, 0.004, 0.12, 6), M(0x6b5a44, { metalness: 0.7 }), 0, 0.07); const f = add(new THREE.ConeGeometry(0.06, 0.2, 3), M(0x8c6a3a, { metalness: 0.8, roughness: 0.35 }), 0, 0.2); f.scale.z = 0.15; f.rotation.z = -0.3; }
   else if (kind === 'key') { const r = add(new THREE.TorusGeometry(0.035, 0.01, 8, 18), M(0xc9a24a, { metalness: 0.9, roughness: 0.3 }), -0.07, 0.012); r.rotation.x = Math.PI / 2; add(new THREE.BoxGeometry(0.11, 0.012, 0.016), M(0xc9a24a, { metalness: 0.9, roughness: 0.3 }), 0.02, 0.012); add(new THREE.BoxGeometry(0.014, 0.012, 0.03), M(0xc9a24a, { metalness: 0.9 }), 0.06, 0.012, 0.018); add(new THREE.BoxGeometry(0.03, 0.004, 0.05), M(0xd8cfb8, { metalness: 0 }), -0.07, 0.002, 0.06); }
   else if (kind === 'frame') { const fr = add(new THREE.BoxGeometry(0.17, 0.21, 0.018), M(0x4a3526, { metalness: 0 }), 0, 0.11); fr.rotation.x = -0.18; const ph = add(new THREE.PlaneGeometry(0.13, 0.17), M(0xd9d2c0, { metalness: 0, emissive: 0x2a2620, emissiveIntensity: 0.3 }), 0, 0.112, 0.012); ph.rotation.x = -0.18; }
@@ -82,17 +82,20 @@ function buildRoom() {
   const levels = [0.75, 1.3, 1.85];
   for (const y of levels) { box(0.42, 0.04, 3.35, wood, sx, y, -1.3); box(0.02, 0.02, 3.3, warmStrip, sx + 0.2, y - 0.03, -1.3); }
   // item slots: bottom + middle shelves hold items, top holds the data shards
+  // two bays between the three dividers (z = -2.95, -1.3, 0.35); items sit evenly inside each bay
+  const BAYS = [[-2.92, -1.33], [-1.27, 0.32]];
+  const inBays = (n) => BAYS.flatMap(([a, b]) => Array.from({ length: n }, (_, k) => a + (b - a) * (k + 0.5) / n));
   const slots = [];
-  for (const y of [levels[1], levels[0]]) for (let k = 0; k < 7; k++) slots.push([sx, y + 0.02, -2.75 + k * 0.48]);
+  for (const y of [levels[1], levels[0]]) for (const z of inBays(4)) slots.push([sx, y + 0.02, z]);
   ITEMS.forEach((it, i) => {
     const m = itemModel(it.model); const [x, y, z] = slots[i];
-    m.position.set(x, y, z); m.rotation.y = Math.PI / 2 + rr(-0.25, 0.25);
+    m.position.set(x, y, z); m.rotation.y = Math.PI / 2 - 0.55 + rr(-0.1, 0.1);   // turned toward the room
     m.visible = false; S.add(m); room.shelf[it.id] = m;
   });
   const gemGeo = new THREE.OctahedronGeometry(0.05);
   SHARDS.forEach((sh, i) => {
     const mat = new THREE.MeshStandardMaterial({ color: 0x0b0e10, emissive: 0x86e1f2, emissiveIntensity: 0, transparent: true, opacity: 0.35 });
-    const gm = new THREE.Mesh(gemGeo, mat); gm.position.set(sx, levels[2] + 0.1, -2.85 + i * 0.28); S.add(gm);
+    const gm = new THREE.Mesh(gemGeo, mat); gm.position.set(sx, levels[2] + 0.1, inBays(6)[i]); S.add(gm);
     room.gems.push({ id: sh.id, m: gm, mat });
   });
   room.selRing = new THREE.Mesh(new THREE.RingGeometry(0.1, 0.13, 32), new THREE.MeshBasicMaterial({ color: 0xf2a04b, transparent: true, opacity: 0.9, side: THREE.DoubleSide, toneMapped: false }));
