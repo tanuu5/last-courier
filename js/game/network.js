@@ -54,13 +54,41 @@ function addStructure(s) {
   s.id = s.id || G.nextId++;
   s.acks = s.acks || 0;
   if (s.type === 'ladder') s.mesh = ladderMesh(new THREE.Vector3(s.p0.x, s.p0.y, s.p0.z), new THREE.Vector3(s.p1.x, s.p1.y, s.p1.z), s.owner);
-  else if (s.type === 'charger') { s.mesh = chargerMesh(s.owner); s.mesh.position.set(s.pos.x, s.pos.y, s.pos.z); addCollider(s.pos.x, s.pos.z, 0.5, 'charger').struct = s; }
+  else if (s.type === 'charger') { s.mesh = chargerMesh(s.owner); s.mesh.position.set(s.pos.x, s.pos.y, s.pos.z); s.collider = addCollider(s.pos.x, s.pos.z, 0.5, 'charger'); s.collider.struct = s; }
   else if (s.type === 'sign') { s.mesh = signMesh(s.sign, s.owner === 'you' ? 'R-07' : s.owner); s.mesh.position.set(s.pos.x, s.pos.y, s.pos.z); }
   s.mesh.visible = s.visible !== false;
   s.visible = s.visible !== false;
   scene.add(s.mesh);
   G.structures.push(s);
   return s;
+}
+function structLabel(type) { return type === 'ladder' ? 'ラダー' : type === 'charger' ? '充電ポスト' : '標識'; }
+// removed structures shrink away for a moment before their mesh is freed (see updateVisuals)
+const DYING_STRUCTS = [];
+function removeStructure(s) {
+  const i = G.structures.indexOf(s); if (i >= 0) G.structures.splice(i, 1);
+  if (s.collider) { removeCollider(s.collider); s.collider = null; }
+  s.visible = false;
+  s.mesh.userData.dieT = 0;
+  DYING_STRUCTS.push(s.mesh);
+}
+function updateDyingStructs(dt) {
+  for (let i = DYING_STRUCTS.length - 1; i >= 0; i--) {
+    const m = DYING_STRUCTS[i];
+    m.userData.dieT += dt;
+    m.scale.setScalar(Math.max(0.001, 1 - smoothstep(0, 0.35, m.userData.dieT)));
+    if (m.userData.dieT < 0.35) continue;
+    scene.remove(m);
+    disposeStructureMesh(m);
+    DYING_STRUCTS.splice(i, 1);
+  }
+}
+function disposeStructureMesh(g) {
+  const shared = new Set(Object.values(MAT));
+  g.traverse((o) => {
+    if (o.isMesh) o.geometry.dispose(); // sprites share one internal geometry, so only meshes free theirs
+    if (o.material && !shared.has(o.material)) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); }
+  });
 }
 function planOtherStructures() {
   // seeded, so other units' structures land in the same places (and belong to the same units) on every load
@@ -131,8 +159,7 @@ function updateAcks(dt) {
   const s = pick(mine);
   const n = 1 + Math.floor(Math.random() * 6);
   s.acks += n; G.stats.acksRecv += n;
-  const label = s.type === 'ladder' ? 'ラダー' : s.type === 'charger' ? '充電ポスト' : '標識';
   const from = pick(UNITS);
-  toast('ACK', `${from} があなたの${label}に ACK ×${n}`);
+  toast('ACK', `${from} があなたの${structLabel(s.type)}に ACK ×${n}`);
   setTimeout(() => { unlockArchive('g-ack'); if (UNIT_ARCH[from]) unlockArchive(UNIT_ARCH[from]); }, 1500);
 }

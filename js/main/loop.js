@@ -59,6 +59,7 @@ function tick(dt) {
   updateEnvironment(dt);
   updateVisuals(dt);
   if (G.mode !== 'title' && G.mode !== 'intro') updateHUD(dt);
+  updateDismantle(dt);
   updateCrossHint(dt);
   $('hud').classList.toggle('dim', !!G.cine || G.mode === 'title' || G.mode === 'intro' || G.mode === 'ending' || G.mode === 'room');
   if (G.mode === 'map') { mapRedraw -= dt; if (mapRedraw <= 0) { mapRedraw = 0.25; drawMap(); } }

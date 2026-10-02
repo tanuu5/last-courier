@@ -122,6 +122,7 @@ function updateVisuals(dt) {
   }
   for (const tb of TURBINES) tb.rotor.rotation.z += tb.spd * dt * (1 + envRain);
   updateShards(dt, t);
+  updateDyingStructs(dt);
   for (const s of G.structures) {
     if (!s.visible) continue;
     if (s.fadeIn !== undefined && s.fadeIn < 1) { s.fadeIn = Math.min(1, s.fadeIn + dt * 0.8); s.mesh.scale.setScalar(0.3 + 0.7 * smoothstep(0, 1, s.fadeIn)); }

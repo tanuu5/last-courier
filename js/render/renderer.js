@@ -17,15 +17,20 @@ const ENV = {
 const COLLIDERS = [];
 const COLL_CELL = 16;
 const collGrid = new Map();
+function forCollCells(c, fn) {
+  const i0 = Math.floor((c.x - c.r + HALF) / COLL_CELL), i1 = Math.floor((c.x + c.r + HALF) / COLL_CELL);
+  const j0 = Math.floor((c.z - c.r + HALF) / COLL_CELL), j1 = Math.floor((c.z + c.r + HALF) / COLL_CELL);
+  for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) fn(j * 1000 + i);
+}
 function addCollider(x, z, r, tag) {
   const c = { x, z, r, tag };
   COLLIDERS.push(c);
-  const i0 = Math.floor((x - r + HALF) / COLL_CELL), i1 = Math.floor((x + r + HALF) / COLL_CELL);
-  const j0 = Math.floor((z - r + HALF) / COLL_CELL), j1 = Math.floor((z + r + HALF) / COLL_CELL);
-  for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
-    const key = j * 1000 + i; let l = collGrid.get(key); if (!l) { l = []; collGrid.set(key, l); } l.push(c);
-  }
+  forCollCells(c, (key) => { let l = collGrid.get(key); if (!l) { l = []; collGrid.set(key, l); } l.push(c); });
   return c;
+}
+function removeCollider(c) {
+  const i = COLLIDERS.indexOf(c); if (i >= 0) COLLIDERS.splice(i, 1);
+  forCollCells(c, (key) => { const l = collGrid.get(key); const k = l ? l.indexOf(c) : -1; if (k >= 0) l.splice(k, 1); });
 }
 function collidersAt(x, z) { return collGrid.get(Math.floor((z + HALF) / COLL_CELL) * 1000 + Math.floor((x + HALF) / COLL_CELL)) || []; }
 

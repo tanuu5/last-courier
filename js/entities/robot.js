@@ -32,7 +32,8 @@ class Robot {
     this.torso = new THREE.Group(); this.torso.position.y = 0.1; this.pelvis.add(this.torso);
     mk(new THREE.CylinderGeometry(0.11, 0.13, 0.2, 12), MAT.dark, this.torso, 0, 0.1, 0);
     const chest = mk(new THREE.BoxGeometry(0.44, 0.3, 0.25), MAT.shell, this.torso, 0, 0.34, 0.01);
-    mk(new THREE.BoxGeometry(0.38, 0.1, 0.27), MAT.shell2, this.torso, 0, 0.2, 0.0);
+    // a touch deeper than the chest so their front faces don't share a plane (z-fighting flicker)
+    mk(new THREE.BoxGeometry(0.38, 0.1, 0.28), MAT.shell2, this.torso, 0, 0.2, 0.0);
     mk(new THREE.BoxGeometry(0.2, 0.16, 0.03), MAT.accent, this.torso, 0, 0.36, 0.14);
     mk(new THREE.BoxGeometry(0.06, 0.02, 0.01), MAT.visor, this.torso, -0.13, 0.43, 0.14);
     // shoulder pads + straps
@@ -69,7 +70,7 @@ class Robot {
     this.rack = new THREE.Group(); this.rack.position.set(0, 0.12, -0.14); this.torso.add(this.rack);
     for (const s of [1, -1]) mk(new THREE.BoxGeometry(0.03, 0.9, 0.03), MAT.dark, this.rack, 0.18 * s, 0.3, -0.03);
     mk(new THREE.BoxGeometry(0.42, 0.03, 0.34), MAT.dark, this.rack, 0, -0.16, -0.17);
-    mk(new THREE.BoxGeometry(0.4, 0.03, 0.03), MAT.accent, this.rack, 0, 0.74, -0.03);
+    mk(new THREE.BoxGeometry(0.42, 0.035, 0.045), MAT.accent, this.rack, 0, 0.74, -0.03); // thicker than the posts it caps, so no shared faces
     mk(new THREE.BoxGeometry(0.3, 0.26, 0.08), MAT.shell2, this.rack, 0, 0.12, -0.01);
     this.stack = new THREE.Group(); this.stack.position.set(0, -0.145, -0.05); this.rack.add(this.stack);
     // state

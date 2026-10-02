@@ -42,7 +42,7 @@ function ladderHeightAt(s, x, z) {
   return lerp(s.p0.y, s.p1.y, t) + 0.07;
 }
 let _onLadder = null;
-function groundAt(x, z, y) {
+function groundAt(x, z, y, skip) {
   let h = terrainHeight(x, z);
   _onLadder = null;
   for (const n of NODES) {
@@ -51,7 +51,7 @@ function groundAt(x, z, y) {
     else if (d < 7.2) h = Math.max(h, n.y + 0.37 - (d - 6.4) * 0.5);
   }
   for (const s of G.structures) {
-    if (s.type !== 'ladder' || !s.visible) continue;
+    if (s.type !== 'ladder' || !s.visible || s === skip) continue;
     const lh = ladderHeightAt(s, x, z);
     if (lh !== null && lh > h - 0.05 && lh <= y + 0.8) { h = Math.max(h, lh); _onLadder = s; }
   }

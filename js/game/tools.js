@@ -80,7 +80,80 @@ function confirmPlacing() {
   rumble(0.5, 0.2, 160);
   const t = pl.type;
   cancelPlacing();
-  if (t === 'ladder' && !G.flags.placedLadder) { G.flags.placedLadder = true; radio('ツムギ', '設置したものはネットワークで共有される。ほかのユニットの役にも立つよ。'); }
+  let delay = 1200;
+  if (t === 'ladder' && !G.flags.placedLadder) { G.flags.placedLadder = true; radio('ツムギ', '設置したものはネットワークで共有される。ほかのユニットの役にも立つよ。'); delay = 6500; }
+  if (!G.flags.tutDismantle) { G.flags.tutDismantle = true; setTimeout(() => radio('ツムギ', '置き直したくなったら、近くで {interact} を長押し。撤去して、ラダーや充電キットは回収できる。'), delay); }
+}
+
+/* =========================================================
+   Dismantling your own structures (hold interact)
+   ========================================================= */
+const DISMANTLE_TIME = 0.8;
+const dismantle = { s: null, t: 0, armed: false };
+function segDist2D(x, z, a, b) {
+  const dx = b.x - a.x, dz = b.z - a.z;
+  const t = clamp(((x - a.x) * dx + (z - a.z) * dz) / (dx * dx + dz * dz || 1), 0, 1);
+  return { d: Math.hypot(x - a.x - dx * t, z - a.z - dz * t), t };
+}
+function nearestOwnStructure() {
+  const P = player;
+  let best = null, bd = Infinity;
+  for (const s of G.structures) {
+    if (s.owner !== 'you' || !s.visible) continue;
+    let d, y;
+    if (s.type === 'ladder') {
+      const r = segDist2D(P.pos.x, P.pos.z, s.p0, s.p1);
+      d = r.d; y = lerp(s.p0.y, s.p1.y, r.t);
+      if (d > 1.6) continue;
+      // don't offer to pull a ladder out from under the robot while it spans a drop
+      if (ladderHeightAt(s, P.pos.x, P.pos.z) !== null && P.pos.y > groundAt(P.pos.x, P.pos.z, P.pos.y, s) + 0.4) continue;
+    } else {
+      d = Math.hypot(P.pos.x - s.pos.x, P.pos.z - s.pos.z); y = s.pos.y;
+      if (d > 1.8) continue;
+    }
+    if (Math.abs(y - P.pos.y) > 2) continue;
+    if (d < bd) { bd = d; best = s; }
+  }
+  return best;
+}
+// the structure about to be removed glows; the overlay shares each part's geometry and is pulled forward so it never z-fights
+const structHi = { s: null, meshes: [], mat: null };
+function setStructHighlight(s) {
+  if (structHi.s === s) return;
+  for (const m of structHi.meshes) if (m.parent) m.parent.remove(m);
+  structHi.meshes = []; structHi.s = s;
+  if (!s) return;
+  if (!structHi.mat) structHi.mat = new THREE.MeshBasicMaterial({ color: 0x86e1f2, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
+  const parts = [];
+  s.mesh.traverse((o) => { if (o.isMesh && !o.material.transparent) parts.push(o); });
+  for (const o of parts) { const h = new THREE.Mesh(o.geometry, structHi.mat); h.renderOrder = 3; o.add(h); structHi.meshes.push(h); }
+}
+let holdShown = -1;
+function updateDismantle(dt) {
+  const a = G.mode === 'play' && !G.cine ? promptAction : null;
+  const target = a && a.type === 'remove' && a.s.visible ? a.s : null;
+  const held = input.fHeld || (inputMode === 'pad' && !!pad.prev[0]);
+  // only a press made on the dismantle prompt counts (holding to pick up cargo must not roll over into dismantling)
+  if (!held) dismantle.armed = false;
+  if (target !== dismantle.s) { dismantle.s = target; dismantle.t = 0; }
+  dismantle.t = target && dismantle.armed ? dismantle.t + dt : 0;
+  const k = clamp(dismantle.t / DISMANTLE_TIME, 0, 1);
+  setStructHighlight(target);
+  if (structHi.mat) structHi.mat.opacity = 0.12 + 0.06 * Math.sin(G.time * 6) + k * 0.45;
+  const kr = Math.round(k * 100) / 100;
+  if (kr !== holdShown) { holdShown = kr; $('prompt').style.setProperty('--hold', kr); }
+  if (k >= 1) { dismantleStructure(target); dismantle.s = null; dismantle.t = 0; } // keep holding to clear the next one
+}
+function dismantleStructure(s) {
+  setStructHighlight(null);
+  removeStructure(s);
+  const label = structLabel(s.type), k = s.type;
+  if (k === 'ladder' || k === 'charger') {
+    if (player.tools[k] < TOOL_MAX[k]) { player.tools[k]++; toast('撤去', `${label}を撤去して回収した（${player.tools[k]} / ${TOOL_MAX[k]}）`); }
+    else toast('撤去', `${label}を撤去した（所持数が上限のため回収なし）`);
+  } else toast('撤去', `${label}を撤去した`);
+  audio.pickup();
+  rumble(0.3, 0.2, 140);
 }
 
 /* =========================================================

@@ -199,7 +199,11 @@ function updatePrompt() {
     if (tn) { text = `${K('interact')} ターミナル ― ${tn.name}`; act = { type: 'terminal', node: tn }; }
     else if (sh) { text = `${K('interact')} 読み取る ― データ片`; act = { type: 'shard', s: sh }; }
     else if (gc) { text = `${K('interact')} 拾う ― ${gc.name}（${gc.w}kg・${Math.round(gc.cond)}%）${gc.lost ? ' <span style="color:var(--signal)">遺失物</span>' : ''}`; act = { type: 'pick', c: gc }; }
-    else if (st) { const label = st.type === 'ladder' ? 'ラダー' : st.type === 'charger' ? '充電ポスト' : '標識'; text = `${K('interact')} ACK を送る ― ${st.owner} の${label}（ACK ${st.acks}）`; act = { type: 'ack', s: st }; }
+    else if (st) { text = `${K('interact')} ACK を送る ― ${st.owner} の${structLabel(st.type)}（ACK ${st.acks}）`; act = { type: 'ack', s: st }; }
+    else {
+      const own = nearestOwnStructure();
+      if (own) { text = `${K('interact')} 長押しで撤去 ― 自分の${structLabel(own.type)}${own.acks ? `（ACK ${own.acks}）` : ''}`; act = { type: 'remove', s: own }; }
+    }
   }
   if (G.mode === 'play' && P.placing) {
     const pl = P.placing;
@@ -220,4 +224,5 @@ function doInteract() {
     setTimeout(() => { unlockArchive('g-ack'); if (UNIT_ARCH[a.s.owner]) unlockArchive(UNIT_ARCH[a.s.owner]); }, 1200);
   }
   else if (a.type === 'shard') readShard(a.s);
+  else if (a.type === 'remove') dismantle.armed = true;
 }
