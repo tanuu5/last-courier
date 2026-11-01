@@ -94,7 +94,8 @@ function rockGeometry(seed, detail) {
     p.setXYZ(i, v.x, v.y, v.z);
   }
   g.deleteAttribute('uv');
-  const ng = g.toNonIndexed(); ng.computeVertexNormals();
+  // faceted shading needs one normal per face; IcosahedronGeometry already comes non-indexed
+  const ng = g.index ? g.toNonIndexed() : g; ng.computeVertexNormals();
   const col = new Float32Array(ng.attributes.position.count * 3);
   const nm = ng.attributes.normal;
   const c1 = new THREE.Color(0x6d6a64), c2 = new THREE.Color(0x4f5a34), c = new THREE.Color();
